@@ -37,10 +37,65 @@
     <textarea id="input" placeholder="Paste AI output here..."></textarea>
     <button onclick="generateProject()">Generate ZIP</button>
     <p id="status"></p>
+
+    <!-- External libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
     <script>
-      // Parse AI Format function parseAIFormat(text) { const blocks = []; const regex = /---FILE:\s*(.*?)\n<<FILE\n([\s\S]*?)\nFILE\n---END_FILE/g; let match; while ((match = regex.exec(text)) !== null) { blocks.push({ path: match[1].trim(), content: match[2] }); } return blocks; } async function generateProject() { const raw = document.getElementById("input").value; if (!raw.trim()) { alert("Please paste AI output!"); return; } const files = parseAIFormat(raw); if (files.length === 0) { alert("Invalid format. Make sure AI used correct FILE markers."); return; } document.getElementById("status").innerText = "Generating ZIP..."; const zip = new JSZip(); files.forEach((f) => { const cleanPath = f.path.replace(/^\/*/, ""); zip.file(cleanPath, f.content); }); const blob = await zip.generateAsync({ type: "blob" }); saveAs(blob, "project.zip"); document.getElementById("status").innerText = "Done! ZIP downloaded."; }
+      /**
+       * Parse AI FILE markers format
+       * Returns array of objects: { path: string, content: string }
+       */
+      function parseAIFormat(text) {
+        const blocks = [];
+        const regex = /---FILE:\s*(.*?)\n<<FILE\n([\s\S]*?)\nFILE\n---END_FILE/g;
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          const path = match[1].trim();
+          const content = match[2].replace(/\r\n/g, "\n"); // normalize newlines
+          console.log("Parsed file:", path);
+          blocks.push({ path, content });
+        }
+        return blocks;
+      }
+
+      async function generateProject() {
+        try {
+          const raw = document.getElementById("input").value;
+          if (!raw.trim()) {
+            alert("Please paste AI output!");
+            return;
+          }
+
+          document.getElementById("status").innerText = "Parsing AI output...";
+          const files = parseAIFormat(raw);
+
+          if (files.length === 0) {
+            alert("Invalid format. Make sure AI used correct FILE markers.");
+            console.error("No files parsed. Check your AI output format.");
+            return;
+          }
+
+          console.log("Files to generate:", files.map(f => f.path));
+          document.getElementById("status").innerText = `Generating ZIP with ${files.length} file(s)...`;
+
+          const zip = new JSZip();
+          files.forEach(f => {
+            const cleanPath = f.path.replace(/^\/+/, ""); // remove leading slashes
+            zip.file(cleanPath, f.content);
+            console.log("Added to ZIP:", cleanPath);
+          });
+
+          const blob = await zip.generateAsync({ type: "blob" });
+          saveAs(blob, "project.zip");
+          console.log("ZIP generation complete!");
+          document.getElementById("status").innerText = "✅ Done! ZIP downloaded.";
+        } catch (err) {
+          console.error("Error generating project ZIP:", err);
+          document.getElementById("status").innerText = "❌ Error! Check console.";
+        }
+      }
     </script>
   </body>
 </html>
