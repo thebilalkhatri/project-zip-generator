@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AI Project Generator (Browser)</title>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 40px;
+        background: #f5f5f5;
+      }
+      textarea {
+        width: 100%;
+        height: 260px;
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 14px;
+      }
+      button {
+        padding: 12px 20px;
+        font-size: 16px;
+        margin-top: 20px;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 20px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>📦 Browser‑Based AI Project Generator</h2>
+    <p>
+      AI ka output neeche paste karo (FILE markers wala format). Button dabao,
+      ZIP generate ho kar download ho jayega.
+    </p>
+    <textarea id="input" placeholder="Paste AI output here..."></textarea>
+    <button onclick="generateProject()">Generate ZIP</button>
+    <p id="status"></p>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script>
+      // Parse AI Format function parseAIFormat(text) { const blocks = []; const regex = /---FILE:\s*(.*?)\n<<FILE\n([\s\S]*?)\nFILE\n---END_FILE/g; let match; while ((match = regex.exec(text)) !== null) { blocks.push({ path: match[1].trim(), content: match[2] }); } return blocks; } async function generateProject() { const raw = document.getElementById("input").value; if (!raw.trim()) { alert("Please paste AI output!"); return; } const files = parseAIFormat(raw); if (files.length === 0) { alert("Invalid format. Make sure AI used correct FILE markers."); return; } document.getElementById("status").innerText = "Generating ZIP..."; const zip = new JSZip(); files.forEach((f) => { const cleanPath = f.path.replace(/^\/*/, ""); zip.file(cleanPath, f.content); }); const blob = await zip.generateAsync({ type: "blob" }); saveAs(blob, "project.zip"); document.getElementById("status").innerText = "Done! ZIP downloaded."; }
+    </script>
+  </body>
+</html>
